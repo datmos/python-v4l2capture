@@ -492,6 +492,43 @@ static PyObject *Video_device_get_exposure_auto(Video_device *self)
 #endif
 }
 
+static PyObject *Video_device_set_brightness(Video_device *self, PyObject *args)
+{
+#ifdef V4L2_CID_BRIGHTNESS
+  int autoexposure;
+  if(!PyArg_ParseTuple(args, "i", &autoexposure))
+    {
+      return NULL;
+    }
+
+  struct v4l2_control ctrl;
+  CLEAR(ctrl);
+  ctrl.id    = V4L2_CID_BRIGHTNESS;
+  ctrl.value = autoexposure;
+  if(my_ioctl(self->fd, VIDIOC_S_CTRL, &ctrl)){
+  	return NULL;
+  }
+  return Py_BuildValue("i",ctrl.value);
+#else
+  return NULL;
+#endif
+}
+
+static PyObject *Video_device_get_brightness(Video_device *self)
+{
+#ifdef V4L2_CID_BRIGHTNESS
+  struct v4l2_control ctrl;
+  CLEAR(ctrl);
+  ctrl.id    = V4L2_CID_BRIGHTNESS;
+  if(my_ioctl(self->fd, VIDIOC_G_CTRL, &ctrl)){
+  	return NULL;
+  }
+  return Py_BuildValue("i",ctrl.value);
+#else
+  return NULL;
+#endif
+}
+
 static PyObject *Video_device_set_focus_auto(Video_device *self, PyObject *args)
 {
 #ifdef V4L2_CID_FOCUS_AUTO
@@ -791,6 +828,13 @@ static PyMethodDef Video_device_methods[] = {
   {"get_white_balance_temperature", (PyCFunction)Video_device_get_white_balance_temperature, METH_NOARGS,
        "get_white_balance_temperature() -> temp \n\n"
        "Request the video device to get white balance temperature value. " },
+  {"set_brightness", (PyCFunction)Video_device_set_brightness, METH_VARARGS,
+       "set_brightness(autoexp) -> autoexp \n\n"
+       "Request the video device to set auto exposure to value. The device may "
+       "choose another value than requested and will return its choice. " },
+  {"get_brightness", (PyCFunction)Video_device_get_brightness, METH_NOARGS,
+       "get_brightness() -> autoexp \n\n"
+       "Request the video device to get auto exposure value. " },
   {"set_exposure_auto", (PyCFunction)Video_device_set_exposure_auto, METH_VARARGS,
        "set_exposure_auto(autoexp) -> autoexp \n\n"
        "Request the video device to set auto exposure to value. The device may "
